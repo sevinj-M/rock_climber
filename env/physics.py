@@ -1,7 +1,7 @@
 import numpy as np
 
 MAX_REACH = 1.5
-MIN_SUPPORT_LIMBS = 0
+MIN_SUPPORT_LIMBS = 1
 
 def in_reach(hold_a: tuple, hold_b: tuple) -> bool:
     """True if two holds are within reach of each other."""

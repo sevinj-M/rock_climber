@@ -17,26 +17,33 @@ class ClimbingEnv(gym.Env):
 
     LH, RH, LF, RF = 0, 1, 2, 3  # limb indices
 
-    def __init__(self, config: dict):
+    # env/climbing_env.py  — __init__ only, everything else stays the same
+
+    def __init__(self, config: dict, wall: dict = None):
         super().__init__()
         self.W = config["wall_width"]
         self.H = config["wall_height"]
         self.max_steps = config.get("max_steps", 200)
 
-        self.holds = self._generate_holds()   # list of (x, y)
-        self.n_holds = len(self.holds)
-        self.target_hold = self._pick_target_hold()
+        if wall is not None:
+            # Use the pre-generated wall
+            self.holds        = wall["holds"]
+            self.n_holds      = wall["n_holds"]
+            self.target_hold  = wall["target_hold"]
+            self._start_holds = wall["start_holds"]   # [lh, rh, lf, rf]
+        else:
+            # Fall back to full grid (original behaviour)
+            self.holds        = self._generate_holds()
+            self.n_holds      = len(self.holds)
+            self.target_hold  = self._pick_target_hold()
+            self._start_holds = None
 
-        # Spaces
-        # State: [lh_x, lh_y, rh_x, rh_y, lf_x, lf_y, rf_x, rf_y,
-        #         com_x, com_y, target_x, target_y]
         low  = np.full(12, -1.0, dtype=np.float32)
         high = np.array([self.W, self.H] * 4 + [self.W, self.H, self.W, self.H],
                         dtype=np.float32)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
-        self.action_space = spaces.Discrete(4 * self.n_holds)
+        self.action_space      = spaces.Discrete(4 * self.n_holds)
 
-        # Runtime state (populated in reset)
         self.limb_holds = [None, None, None, None]
         self.step_count = 0
 
@@ -46,14 +53,16 @@ class ClimbingEnv(gym.Env):
         super().reset(seed=seed)
         self.step_count = 0
 
-        # Place feet on the two bottom-centre holds, hands just above
-        cx = self.W // 2
-        lf_hold = self._find_hold(cx - 1, 0)
-        rf_hold = self._find_hold(cx,     0)
-        lh_hold = self._find_hold(cx - 1, 1)
-        rh_hold = self._find_hold(cx,     1)
+        if self._start_holds is not None:
+            self.limb_holds = list(self._start_holds)   # [lh, rh, lf, rf]
+        else:
+            cx = self.W // 2
+            lf_hold = self._find_hold(cx - 1, 0)
+            rf_hold = self._find_hold(cx,     0)
+            lh_hold = self._find_hold(cx - 1, 1)
+            rh_hold = self._find_hold(cx,     1)
+            self.limb_holds = [lh_hold, rh_hold, lf_hold, rf_hold]
 
-        self.limb_holds = [lh_hold, rh_hold, lf_hold, rf_hold]
         return self._get_state(), {}
 
     def step(self, action: int):

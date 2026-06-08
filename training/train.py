@@ -8,7 +8,7 @@ from env.climbing_env import ClimbingEnv
 from agent.dqn_agent import DQNAgent
 
 
-def train(config_path: str = "configs/default.yaml"):
+def train(config_path: str = "configs/default.yaml", wall: dict = None):
 
     # ── Config ─────────────────────────────────────────────────────────────────
     with open(config_path) as f:
@@ -18,7 +18,7 @@ def train(config_path: str = "configs/default.yaml"):
     os.makedirs("logs",        exist_ok=True)
 
     # ── Setup ──────────────────────────────────────────────────────────────────
-    env       = ClimbingEnv(config)
+    env = ClimbingEnv(config, wall=wall)
     state_dim = env.observation_space.shape[0]
     n_actions = env.action_space.n
     agent     = DQNAgent(config, state_dim, n_actions)

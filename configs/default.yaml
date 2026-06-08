@@ -1,7 +1,7 @@
 # Wall
-wall_width:  6
-wall_height: 8
-max_steps:   200
+wall_width:  8
+wall_height: 12
+max_steps:   300
 
 # Training
 n_episodes:    2000
